@@ -1,1 +1,48 @@
+name: Build Android AAB
 
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova Project and Build AAB
+        run: |
+          cordova create myapp com.example.app MyApp
+          cd myapp
+          cordova platform add android
+          
+          # Copy uploaded HTML files if present, or create default index.html
+          if [ -f "../index.html" ]; then
+            cp -r ../*.html ../*.css ../*.js www/ 2>/dev/null || true
+          elif [ -f "../customer5.html" ]; then
+            cp ../customer5.html www/index.html
+            cp -r ../*.html ../*.css ../*.js www/ 2>/dev/null || true
+          fi
+          
+          cordova build android --release -- --packageType=bundle
+
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: myapp/platforms/android/app/build/outputs/bundle/release/*.aab
