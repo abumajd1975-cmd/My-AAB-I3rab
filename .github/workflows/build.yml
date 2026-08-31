@@ -27,7 +27,7 @@ jobs:
 
       - name: Create Cordova Project and Build AAB
         run: |
-          cordova create myapp com.example.app MyApp
+          cordova create myapp com.aldebes.myapp "الإعراب الذكي"
           cd myapp
           cordova platform add android
           
