@@ -127,8 +127,6 @@
             color: #8b6f58;
             font-weight: 700;
         }
-        .loader { display: inline-block; width: 18px; height: 18px; border: 3px solid #ddd; border-radius: 50%; border-top-color: #8b6f58; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .closed-message { text-align: center; padding: 50px 20px; color: #5a3e2b; }
         .closed-message h2 { font-size: 30px; }
         .closed-message button {
@@ -140,6 +138,7 @@
             font-size: 18px;
             cursor: pointer;
             font-family: inherit;
+            margin-top: 15px;
         }
         .save-success {
             background: #d5f5e3;
@@ -182,19 +181,15 @@
 
 <script>
     // ================================================================
-    // 🔑 مفتاح API (مخفي داخل الكود - لا يراه المستخدم)
+    // 🔑 مفتاح API
     // ================================================================
     const API_KEY = 'i3rb_485c9a7068450213202e184a03426242821beec98c3d9579c5c406829489faea';
 
-    // متغير لتخزين آخر نتيجة إعراب
     let lastResult = {
         sentence: '',
         words: []
     };
 
-    // ================================================================
-    // الإعدادات
-    // ================================================================
     const COLORS = {
         'noun': '#2980b9',
         'verb': '#e74c3c',
@@ -218,9 +213,6 @@
         'interjection': 'أداة'
     };
 
-    // ================================================================
-    // دالة استخراج الإعراب من كائن parsing
-    // ================================================================
     function extractParsing(parsing) {
         if (!parsing) return 'إعراب غير محدد';
         if (typeof parsing === 'string') return parsing;
@@ -233,9 +225,7 @@
         return 'إعراب غير محدد';
     }
 
-    // ================================================================
-    // الوضع الاحتياطي (في حال فشل API)
-    // ================================================================
+    // الوضع الاحتياطي المحلي
     function smartParse(sentence) {
         const words = sentence.split(/\s+/).filter(w => w.length > 0);
         if (words.length === 0) return [];
@@ -280,18 +270,14 @@
                     results.push({ word: w, irab: 'حرف جر مبني', type: 'preposition' });
                     i++;
                     if (i < words.length) {
-                        results.push({ word: words[i], irab: 'اسم مجرور (مضاف إليه)', type: 'noun' });
+                        results.push({ word: words[i], irab: 'اسم مجرور', type: 'noun' });
                         i++;
                     }
                 } else if (CONJUNCTIONS.includes(c)) {
                     results.push({ word: w, irab: 'حرف عطف', type: 'conjunction' });
                     i++;
                 } else {
-                    if (i === 2 || (results.length > 0 && results[results.length-1].type === 'noun')) {
-                        results.push({ word: w, irab: 'مفعول به منصوب', type: 'noun' });
-                    } else {
-                        results.push({ word: w, irab: 'نعت / عطف (تابع)', type: 'noun' });
-                    }
+                    results.push({ word: w, irab: 'مفعول به منصوب / تابع', type: 'noun' });
                     i++;
                 }
             }
@@ -303,16 +289,11 @@
                     results.push({ word: w, irab: 'حرف جر مبني', type: 'preposition' });
                     i++;
                     if (i < words.length) {
-                        results.push({ word: words[i], irab: 'اسم مجرور (مضاف إليه)', type: 'noun' });
+                        results.push({ word: words[i], irab: 'اسم مجرور', type: 'noun' });
                         i++;
                     }
-                } else if (CONJUNCTIONS.includes(c)) {
-                    results.push({ word: w, irab: 'حرف عطف', type: 'conjunction' });
-                    i++;
                 } else {
                     let irab = 'مبتدأ مرفوع';
-                    if (c.startsWith(DEFINITE)) irab += ' (معرفة)';
-                    else irab += ' (نكرة)';
                     results.push({ word: w, irab: irab, type: 'noun' });
                     i++;
                 }
@@ -320,20 +301,8 @@
             if (i < words.length) {
                 const w = words[i];
                 const c = clean[i];
-                if (PREPOSITIONS.includes(c)) {
-                    results.push({ word: w, irab: 'حرف جر مبني', type: 'preposition' });
-                    i++;
-                    if (i < words.length) {
-                        results.push({ word: words[i], irab: 'اسم مجرور (خبر شبه جملة)', type: 'noun' });
-                        i++;
-                    }
-                } else if (CONJUNCTIONS.includes(c)) {
-                    results.push({ word: w, irab: 'حرف عطف', type: 'conjunction' });
-                    i++;
-                } else {
+                if (!PREPOSITIONS.includes(c) && !CONJUNCTIONS.includes(c)) {
                     let irab = 'خبر مرفوع';
-                    if (c.startsWith(DEFINITE)) irab += ' (معرفة)';
-                    else irab += ' (نكرة)';
                     results.push({ word: w, irab: irab, type: 'noun' });
                     i++;
                 }
@@ -345,14 +314,14 @@
                     results.push({ word: w, irab: 'حرف جر', type: 'preposition' });
                     i++;
                     if (i < words.length) {
-                        results.push({ word: words[i], irab: 'مضاف إليه مجرور', type: 'noun' });
+                        results.push({ word: words[i], irab: 'اسم مجرور', type: 'noun' });
                         i++;
                     }
                 } else if (CONJUNCTIONS.includes(c)) {
                     results.push({ word: w, irab: 'حرف عطف', type: 'conjunction' });
                     i++;
                 } else {
-                    results.push({ word: w, irab: 'نعت / عطف (تابع)', type: 'noun' });
+                    results.push({ word: w, irab: 'تابع / نعت / مضاف إليه', type: 'noun' });
                     i++;
                 }
             }
@@ -360,9 +329,6 @@
         return results;
     }
 
-    // ================================================================
-    // الإعراب الرئيسي
-    // ================================================================
     async function analyze() {
         const input = document.getElementById('sentenceInput');
         const resultArea = document.getElementById('resultArea');
@@ -370,7 +336,7 @@
         const sentence = input.value.trim();
 
         if (!sentence) {
-            resultArea.innerHTML = `<div class="empty-message">⚠️ اكتب جملة أولاً</div>`;
+            resultArea.innerHTML = `<div class="empty-message">⚠️️ اكتب جملة أولاً</div>`;
             return;
         }
 
@@ -378,73 +344,70 @@
         btn.innerHTML = '⏳ جاري...';
 
         try {
-            const response = await fetch('https://api.i3rbly.com/v1/parse', {
+            const promptPayload = {
+                model: "deepseek-chat",
+                messages: [
+                    {
+                        role: "system",
+                        content: "أنت خبير في الإعراب العربي. قم بإعراب الجملة وإرجاع النتيجة بصيغة JSON فقط بالتنسيق التالي: {\"words\": [{\"word\": \"الكلمة\", \"irab\": \"الإعراب التفصيلي\", \"type\": \"noun|verb|preposition|conjunction|pronoun|adverb|particle\"}]}"
+                    },
+                    {
+                        role: "user",
+                        content: sentence
+                    }
+                ],
+                response_format: { type: "json_object" }
+            };
+
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ sentence: sentence })
+                body: JSON.stringify(promptPayload)
             });
 
             const textResponse = await response.text();
             let json = null;
             try { json = JSON.parse(textResponse); } catch (_) {}
 
-            if (response.ok && json && json.success !== false) {
-                let words = [];
-                if (json.data && json.data.words) words = json.data.words;
-                else if (json.words) words = json.words;
+            let parsedWords = [];
 
-                const formattedWords = words.map(item => {
+            if (response.ok && json && json.choices && json.choices[0] && json.choices[0].message) {
+                const content = JSON.parse(json.choices[0].message.content);
+                if (content.words) parsedWords = content.words;
+            } else if (json && json.words) {
+                parsedWords = json.words;
+            }
+
+            if (parsedWords.length > 0) {
+                const formattedWords = parsedWords.map(item => {
                     const word = item.word || item.text || '?';
-                    let irab = 'إعراب غير محدد';
-                    if (item.parsing) {
-                        irab = extractParsing(item.parsing);
-                    } else if (item.irab) {
-                        irab = item.irab;
-                    } else if (item.analysis) {
-                        irab = item.analysis;
-                    }
+                    let irab = item.irab || extractParsing(item.parsing) || 'إعراب غير محدد';
                     const type = item.type || 'default';
-                    const typeAr = TYPE_TRANSLATION[type] || type;
-                    if (!irab.includes(typeAr) && typeAr !== type) {
-                        irab = `${irab} (${typeAr})`;
-                    }
                     return { word: word, irab: irab, type: type };
                 });
 
-                if (formattedWords.length > 0) {
-                    // حفظ النتيجة للتخزين
-                    lastResult.sentence = sentence;
-                    lastResult.words = formattedWords;
-                    displayWords(formattedWords, resultArea);
-                } else {
-                    throw new Error('لم يتم العثور على كلمات');
-                }
-            } else {
-                const words = smartParse(sentence);
                 lastResult.sentence = sentence;
-                lastResult.words = words;
-                displayWords(words, resultArea);
-                resultArea.innerHTML += `<div class="error-message" style="margin-top:10px;font-size:13px;">⚠️ تم استخدام المحلل الاحتياطي (بدون إنترنت)</div>`;
+                lastResult.words = formattedWords;
+                displayWords(formattedWords, resultArea);
+            } else {
+                throw new Error('لم يتم استرجاع إعراب دقيق من المزود');
             }
         } catch (error) {
-            console.error(error);
+            console.warn("API Call Failed or fallback triggered:", error);
             const words = smartParse(sentence);
             lastResult.sentence = sentence;
             lastResult.words = words;
             displayWords(words, resultArea);
-            resultArea.innerHTML += `<div class="error-message" style="margin-top:10px;font-size:13px;">⚠️ تم استخدام المحلل الاحتياطي (بدون إنترنت)</div>`;
+            resultArea.innerHTML += `<div class="error-message" style="margin-top:10px;font-size:13px;">⚠️ تم استخدام المحلل الاحتياطي (وضع عدم الاتصال)</div>`;
         } finally {
             btn.disabled = false;
             btn.innerHTML = '🔍 إعراب';
         }
     }
 
-    // ================================================================
-    // عرض النتائج
-    // ================================================================
     function displayWords(words, resultArea) {
         if (!words || words.length === 0) {
             resultArea.innerHTML = `<div class="empty-message">⚠️ لم يتم التعرف على كلمات</div>`;
@@ -466,48 +429,38 @@
         resultArea.innerHTML = html;
     }
 
-    // ================================================================
-    // حفظ النتيجة إلى ملف
-    // ================================================================
     function saveResult() {
         if (lastResult.words.length === 0) {
             alert('⚠️ لا توجد نتيجة للحفظ. قم بإعراب جملة أولاً.');
             return;
         }
 
-        // بناء محتوى الملف
         const now = new Date();
         const dateStr = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
         
         let content = '═══════════════════════════════════════\n';
-        content += '        📖 نتيجة الإعراب\n';
+        content += '         📖 نتيجة الإعراب\n';
         content += '═══════════════════════════════════════\n\n';
         content += `📝 الجملة: ${lastResult.sentence}\n\n`;
-        content += '┌─────────────┬────────────────────────────┐\n';
-        content += '│   الكلمة    │         الإعراب           │\n';
-        content += '├─────────────┼────────────────────────────┤\n';
+        content += 'تفاصيل الإعراب:\n';
+        content += '---------------------------------------\n';
         
-        lastResult.words.forEach(item => {
+        lastResult.words.forEach((item, index) => {
             const word = item.word || '?';
             const irab = item.irab || 'إعراب غير محدد';
-            // تنسيق الجدول
-            const wordPad = word.padEnd(11, ' ');
-            const irabPad = irab.padEnd(26, ' ');
-            content += `│ ${wordPad} │ ${irabPad} │\n`;
+            content += `${index + 1}. ${word} : ${irab}\n`;
         });
         
-        content += '└─────────────┴────────────────────────────┘\n\n';
+        content += '---------------------------------------\n\n';
         content += `📅 التاريخ: ${dateStr}\n`;
         content += '═══════════════════════════════════════\n';
         content += '🤍 Done by Eng. Mohammed Fawzi\n';
 
-        // إنشاء ملف و تنزيله
         try {
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             
-            // اسم الملف: اعراب_التاريخ.txt
             const fileName = `اعراب_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.txt`;
             link.download = fileName;
             
@@ -516,46 +469,38 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
             
-            // رسالة نجاح
             const resultArea = document.getElementById('resultArea');
-            resultArea.innerHTML += `
-                <div class="save-success">✅ تم حفظ الملف بنجاح في مجلد التنزيلات 📁</div>
-            `;
+            const successDiv = document.createElement('div');
+            successDiv.className = 'save-success';
+            successDiv.innerText = '✅ تم حفظ الملف بنجاح في مجلد التنزيلات 📁';
+            resultArea.appendChild(successDiv);
             
         } catch (error) {
             alert('❌ فشل حفظ الملف: ' + error.message);
         }
     }
 
-    // ================================================================
-    // أزرار التحكم
-    // ================================================================
     function newSentence() {
         document.getElementById('sentenceInput').value = '';
         document.getElementById('resultArea').innerHTML = '<div class="empty-message">✍️ اكتب جملة ثم اضغط "إعراب"</div>';
         document.getElementById('sentenceInput').focus();
-        // إعادة تعيين النتيجة المحفوظة
         lastResult = { sentence: '', words: [] };
     }
 
     function exitApp() {
-        if (!window.close()) {
-            document.getElementById('appContainer').innerHTML = `
-                <div class="closed-message">
-                    <h2>🔒 تم الإغلاق</h2>
-                    <p>أغلق علامة التبويب الآن.</p>
-                    <br>
-                    <button onclick="location.reload()">🔄 إعادة التشغيل</button>
-                </div>
-            `;
-        }
+        document.getElementById('appContainer').innerHTML = `
+            <div class="closed-message">
+                <h2>🔒 تم الإغلاق</h2>
+                <p>يمكنك إغلاق علامة التبويب أو إعادة التشغيل.</p>
+                <button onclick="location.reload()">🔄 إعادة التشغيل</button>
+            </div>
+        `;
     }
 
-    // دعم Enter
     document.getElementById('sentenceInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') analyze();
     });
 </script>
 
 </body>
-</html>    
+</html>
